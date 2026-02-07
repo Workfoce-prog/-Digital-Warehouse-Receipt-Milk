@@ -18,17 +18,48 @@ def gen_id(prefix: str, n: int = 8) -> str:
 
 def load_csv_schema(name: str, required_cols: list[str], seed_df: pd.DataFrame | None = None) -> pd.DataFrame:
     """
-    Load a CSV and enforce required columns.
-    - If file missing/empty/wrong headers: return seeded data (if provided) or empty df with required columns.
+    Load a CSV from /data and enforce required columns.
+    If file missing/empty/wrong headers: optionally seed it or return empty df with required cols.
     """
-    df = load_csv(name)
+    path = DATA_DIR / name
 
-    # Empty or wrong columns → self-heal
+    # If file missing, seed or return empty schema
+    if not path.exists():
+        if seed_df is not None:
+            save_csv(seed_df, name)
+            return seed_df.copy()
+        return pd.DataFrame(columns=required_cols)
+
+    # Read with forced header
+    try:
+        df = pd.read_csv(path, sep=",", header=0, engine="python")
+    except Exception:
+        if seed_df is not None:
+            save_csv(seed_df, name)
+            return seed_df.copy()
+        return pd.DataFrame(columns=required_cols)
+
+    # If headers wrong, try headerless-read and promote first row if it matches schema
+    if df.empty or any(c not in df.columns for c in required_cols):
+        try:
+            df2 = pd.read_csv(path, sep=",", header=None, engine="python")
+            first_row = df2.iloc[0].astype(str).str.strip().tolist()
+            if first_row == required_cols:
+                df2 = df2.iloc[1:].copy()
+                df2.columns = required_cols
+                df = df2
+        except Exception:
+            df = pd.DataFrame()
+
+    # Still bad → seed or empty schema
     if df.empty or any(c not in df.columns for c in required_cols):
         if seed_df is not None:
             save_csv(seed_df, name)
             return seed_df.copy()
         return pd.DataFrame(columns=required_cols)
+
+    return df[required_cols].copy()
+
 
     # Keep only required columns to avoid surprises
     return df[required_cols].copy()
