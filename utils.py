@@ -5,7 +5,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import random, string
 
-user = require_login()
+
 
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
