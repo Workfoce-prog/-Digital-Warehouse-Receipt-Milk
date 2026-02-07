@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 from urllib.parse import parse_qs
 from utils import load_csv
+from auth import require_login
+user = require_login()
+
 
 st.set_page_config(page_title="Verify DWR", layout="wide")
 st.title("Verify DWR/BDN (QR / Receipt ID)")
