@@ -2,9 +2,11 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 from utils import load_csv, save_csv, log_event, gen_id
+from auth import require_login
+user = require_login()
+
 
 st.set_page_config(page_title="In-house Advance", layout="wide")
-user = st.session_state.user
 st.title("In-house Advance (Pilot) — Platform-led finance")
 
 if user["role"] not in ["platform","owner"]:
