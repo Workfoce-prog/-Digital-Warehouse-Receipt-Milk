@@ -4,6 +4,102 @@ from datetime import datetime
 from datetime import datetime
 import random
 import string
+import json
+from datetime import datetime
+
+def make_qr_payload(receipt_row: dict) -> str:
+    """
+    Minimal QR payload (string). Keep it short + stable.
+    You can later replace with a signed payload (HMAC) if desired.
+    """
+    payload = {
+        "type": "DWR",
+        "receipt_id": str(receipt_row.get("receipt_id", "")),
+        "lot_id": str(receipt_row.get("lot_id", "")),
+        "owner_entity_id": str(receipt_row.get("owner_entity_id", "")),
+        "custodian_id": str(receipt_row.get("custodian_id", "")),
+        "status": str(receipt_row.get("status", "")),
+        "issued_at": str(receipt_row.get("issued_at", "")),
+        "expiry_ts": str(receipt_row.get("expiry_ts", "")),
+    }
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
+
+def generate_receipt_pdf(receipt_row: dict, lot_row: dict | None = None, out_path: str | None = None) -> str:
+    """
+    Create a simple PDF receipt using reportlab.
+    Returns the file path written.
+    """
+    from reportlab.lib.pagesizes import letter
+    from reportlab.pdfgen import canvas
+
+    if out_path is None:
+        rid = str(receipt_row.get("receipt_id", "RECEIPT"))
+        out_path = f"receipts/{rid}.pdf"
+
+    # Ensure folder exists
+    import os
+    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+
+    c = canvas.Canvas(out_path, pagesize=letter)
+    width, height = letter
+
+    y = height - 60
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(50, y, "Mali Dairy Digital Warehouse Receipt (DWR/BDN)")
+    y -= 25
+
+    c.setFont("Helvetica", 11)
+    def line(label, value):
+        nonlocal y
+        c.drawString(50, y, f"{label}: {value}")
+        y -= 16
+
+    line("Receipt ID", receipt_row.get("receipt_id", ""))
+    line("Issued At", receipt_row.get("issued_at", ""))
+    line("Expiry", receipt_row.get("expiry_ts", ""))
+    line("Status", receipt_row.get("status", ""))
+    line("Owner Entity", receipt_row.get("owner_entity_id", ""))
+    line("Custodian", receipt_row.get("custodian_id", ""))
+    line("Lien Active", receipt_row.get("lien_active", ""))
+    line("Lien Holder", receipt_row.get("lien_holder_id", ""))
+
+    y -= 10
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, y, "Lot details")
+    y -= 18
+    c.setFont("Helvetica", 11)
+
+    if lot_row:
+        line("Lot ID", lot_row.get("lot_id", ""))
+        line("Product", lot_row.get("product_type", ""))
+        line("Quantity (L)", lot_row.get("quantity_liters", ""))
+        line("Quality Grade", lot_row.get("quality_grade", ""))
+        line("Temp Avg (C)", lot_row.get("temp_avg_c", ""))
+        line("Temp Breaches", lot_row.get("temp_breach_count", ""))
+    else:
+        line("Lot", "(not provided)")
+
+    # QR payload printed (simple)
+    y -= 8
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, y, "QR Payload")
+    y -= 16
+    c.setFont("Helvetica", 8)
+    qr_payload = receipt_row.get("qr_payload", "")
+    # wrap payload
+    max_chars = 95
+    for i in range(0, len(qr_payload), max_chars):
+        c.drawString(50, y, qr_payload[i:i+max_chars])
+        y -= 10
+        if y < 60:
+            c.showPage()
+            y = height - 60
+            c.setFont("Helvetica", 8)
+
+    c.showPage()
+    c.save()
+    return out_path
 
 def gen_id(prefix: str) -> str:
     """
