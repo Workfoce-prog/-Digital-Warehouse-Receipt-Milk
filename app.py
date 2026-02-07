@@ -14,11 +14,12 @@ st.set_page_config(page_title="Mali Dairy DWR Platform", layout="wide")
 user = require_login()
 
 # ----------------------------
-# Forced navigation (guaranteed sidebar page list)
+# ----------------------------
+# Forced navigation (NO app.py inside)
 # ----------------------------
 pages = {
     "Pilot Workflow": [
-        st.Page("app.py", title="Home"),
+        st.Page("pages/0_Home.py", title="Home"),
         st.Page("pages/1_Tanks_Storage.py", title="Tanks & Storage"),
         st.Page("pages/2_Intake_and_Tests.py", title="Intake & Tests"),
         st.Page("pages/3_Issue_DWR.py", title="Issue DWR / BDN"),
@@ -33,7 +34,9 @@ pages = {
 }
 
 nav = st.navigation(pages)
-selected = nav.run()
+nav.run()
+st.stop()
+
 
 # IMPORTANT:
 # When user selects a page other than Home, stop rendering the Home dashboard.
