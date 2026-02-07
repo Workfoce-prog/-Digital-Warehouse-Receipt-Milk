@@ -34,10 +34,43 @@ for cid in custodians["custodian_id"].tolist():
     disp = disputes[disputes["receipt_id"].isin(rids)] if rids else pd.DataFrame()
     dispute_rate = (len(disp)/max(1,len(rids))) if rids else 0.0
 
+    # --- make score numeric (robust) ---
+score_val = score
+
+# If score is a dict like {"score": 72, ...}
+if isinstance(score_val, dict):
+    score_val = score_val.get("score")
+
+# If score is a pandas object (Series/DataFrame cell)
+try:
+    import pandas as pd
+    if isinstance(score_val, (pd.Series, pd.DataFrame)):
+        score_val = float(score_val.squeeze())
+except Exception:
+    pass
+
+# If score is a string like "72" or "72%" or ""
+if isinstance(score_val, str):
+    score_val = score_val.strip().replace("%", "")
+    score_val = float(score_val) if score_val else None
+
+# If still None, stop gracefully
+if score_val is None:
+    st.error("Cold Chain score could not be computed (missing inputs).")
+    st.stop()
+
+score_val = float(score_val)
+
+    
     score = compute_coldchain_score(avg_temp, breaches, len(disp), spoiled)
     penalty = "none"
-    if score < 40: penalty = "suspend_review"
-    elif score < 60: penalty = "provisional_penalty"
+    if score_val < 40:
+    penalty = "suspend_review"
+elif score_val < 60:
+    penalty = "warning"
+else:
+    penalty = "ok"
+
     rows.append({
         "month": month,
         "custodian_id": cid,
