@@ -17,15 +17,21 @@ def gen_id(prefix: str, n: int = 8) -> str:
     return prefix + "".join(random.choice(string.digits) for _ in range(n))
 
 def load_csv_schema(name: str, required_cols: list[str], seed_df: pd.DataFrame | None = None) -> pd.DataFrame:
+    """
+    Load a CSV and enforce required columns.
+    - If file missing/empty/wrong headers: return seeded data (if provided) or empty df with required columns.
+    """
     df = load_csv(name)
-    # If empty or wrong headers, fix by seeding or returning empty with correct columns
+
+    # Empty or wrong columns → self-heal
     if df.empty or any(c not in df.columns for c in required_cols):
         if seed_df is not None:
             save_csv(seed_df, name)
             return seed_df.copy()
         return pd.DataFrame(columns=required_cols)
-    return df
 
+    # Keep only required columns to avoid surprises
+    return df[required_cols].copy()
 
 def save_csv(df: pd.DataFrame, name: str) -> None:
     (DATA_DIR / name).parent.mkdir(parents=True, exist_ok=True)
