@@ -2,9 +2,11 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from utils import load_csv, save_csv, compute_coldchain_score, log_event
+from auth import require_login
+user = require_login()
+
 
 st.set_page_config(page_title="Cold Chain SLA", layout="wide")
-user = st.session_state.user
 st.title("Cold Chain SLA Dashboard (Pilot)")
 
 if user["role"] not in ["platform","government"]:
