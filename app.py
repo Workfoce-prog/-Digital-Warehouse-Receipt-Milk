@@ -1,4 +1,4 @@
-import from utils import load_csv_schema
+from utils import load_csv_schema
 import pandas as pd
 from auth import require_login
 user = require_login()
