@@ -1,10 +1,11 @@
 import streamlit as st
 from auth import require_login
 from utils import load_csv
+from auth import require_login
+user = require_login()
+
 
 st.set_page_config(page_title="Mali Dairy DWR Platform", layout="wide")
-
-user = require_login()
 
 st.sidebar.markdown("---")
 st.sidebar.write(f"**Role:** {user['role']}")
