@@ -1,6 +1,18 @@
 import os
 import pandas as pd
 from datetime import datetime
+from datetime import datetime
+import random
+import string
+
+def gen_id(prefix: str) -> str:
+    """
+    Generate a reasonably unique ID like LOT-20260206-142233-7Q3K
+    """
+    ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    rand = "".join(random.choices(string.ascii_uppercase + string.digits, k=4))
+    return f"{prefix}-{ts}-{rand}"
+
 
 DATA_DIR = "data"
 
