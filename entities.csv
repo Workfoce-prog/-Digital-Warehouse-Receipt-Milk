@@ -1,0 +1,7 @@
+entity_id,entity_type,name,contact_name,phone,region,legal_status,mobile_money_id
+E-WG-001,women_group,Association Femmes Laitières de Sikasso,Awa Traoré,+22370000001,Sikasso,informal_registered,OM-AWA-001
+E-WI-001,woman_individual,Fatoumata Diallo (Transformatrice),Fatoumata Diallo,+22370000002,Koulikoro,informal_registered,OM-FAT-001
+E-COOP-001,coop,Coopérative Lait Bamako,Mariama Koné,+22370000003,Bamako,formal,OM-COOP-001
+E-COMP-001,company,LaitMali SARL,Moussa Keita,+22370000004,Bamako,formal,OM-LAIT-001
+E-BUY-001,buyer,Hôpital Régional Sikasso,Procurement,+22370000005,Sikasso,formal,OM-HOSP-001
+E-PLAT-001,platform,Mali Dairy DWR Platform,Admin,+22370000099,Bamako,formal,PLAT

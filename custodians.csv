@@ -1,0 +1,4 @@
+custodian_id,custodian_type,name,region,license_status,power_source,notes
+C-MCC-001,mcc,Centre de Collecte Sikasso,Sikasso,licensed,solar+grid,Chilling available
+C-CHILL-001,chilling_center,Chiller Koulikoro,Koulikoro,licensed,grid,Bulk tank
+C-PROC-001,processor,Mini-Usine Bamako,Bamako,licensed,grid,Yogurt/butter processing

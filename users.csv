@@ -1,0 +1,9 @@
+username,password,role,entity_id
+platform_admin,Admin123!,platform,E-PLAT-001
+women_group,Admin123!,owner,E-WG-001
+woman_processor,Admin123!,owner,E-WI-001
+private_dairy,Admin123!,owner,E-COMP-001
+custodian_mcc,Admin123!,custodian,C-MCC-001
+bank_demo,Admin123!,bank,BANK-001
+buyer_demo,Admin123!,buyer,E-BUY-001
+government,Admin123!,government,GOV-REG-001

@@ -1,0 +1,1 @@
+lot_id,created_at,owner_entity_id,custodian_id,tank_id,product_type,quantity_liters,fat_pct,snf_pct,acidity,antibiotic_test,bacterial_score,temp_avg_c,temp_breach_count,collection_time,chill_time,expiry_ts,quality_grade,status,notes

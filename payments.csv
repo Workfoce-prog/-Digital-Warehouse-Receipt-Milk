@@ -1,0 +1,1 @@
+payment_id,ref_type,ref_id,payer_id,payee_id,amount_xof,method,status,created_at,confirmed_at,provider_ref

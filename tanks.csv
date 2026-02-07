@@ -1,0 +1,4 @@
+tank_id,custodian_id,capacity_liters,cooling_type,temp_min_c,temp_max_c,status,ownership_model,owner_entity_id,rent_xof_per_day,rent_to_own_months,purchase_price_xof
+T-500-001,C-MCC-001,500,direct_expansion,2,6,available,rental,E-PLAT-001,5000,12,2500000
+T-1000-001,C-CHILL-001,1000,ice_bank,2,6,available,rent_to_own,E-PLAT-001,8000,18,4200000
+T-300-001,C-PROC-001,300,direct_expansion,2,6,occupied,owned,E-COMP-001,0,0,1800000
