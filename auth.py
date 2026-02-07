@@ -1,5 +1,8 @@
 import streamlit as st
 from utils import load_csv
+from auth import require_login
+user = require_login()
+
 
 def require_login():
     if "user" not in st.session_state:
