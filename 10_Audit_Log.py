@@ -1,5 +1,8 @@
 import streamlit as st
 from utils import load_csv
+from auth import require_login
+user = require_login()
+
 
 st.set_page_config(page_title="Audit Log", layout="wide")
 st.title("Audit Log (Append-only)")
