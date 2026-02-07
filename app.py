@@ -1,5 +1,4 @@
 import streamlit as st
-from auth import require_login
 from utils import load_csv
 from auth import require_login
 user = require_login()
