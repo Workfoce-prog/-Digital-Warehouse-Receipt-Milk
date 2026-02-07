@@ -1,9 +1,11 @@
 import streamlit as st
 import pandas as pd
 from utils import load_csv, save_csv, log_event
+from auth import require_login
+user = require_login()
+
 
 st.set_page_config(page_title="Tanks & Cold Storage", layout="wide")
-user = st.session_state.user
 
 st.title("Tanks & Cold Storage (Rental / Rent-to-Own)")
 tanks = load_csv("tanks.csv")
