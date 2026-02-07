@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from datetime import datetime, timedelta
 import random, string
-from auth import require_login
+
 user = require_login()
 
 
