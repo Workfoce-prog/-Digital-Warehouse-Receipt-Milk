@@ -7,6 +7,97 @@ import string
 import json
 from datetime import datetime
 
+def compute_coldchain_score(
+    temp_avg_c: float | int | None = None,
+    temp_min_c: float | int | None = None,
+    temp_max_c: float | int | None = None,
+    breach_count: int | None = None,
+    max_allowed_c: float = 4.0,
+    min_allowed_c: float = 0.0,
+) -> dict:
+    """
+    Returns a simple cold-chain SLA score + category.
+    Score is 0–100 (higher is better).
+    - Penalizes temperature breaches and excursions beyond allowed range.
+    - Designed to be transparent and easy to audit.
+    """
+
+    def fnum(x):
+        try:
+            return float(x)
+        except Exception:
+            return None
+
+    temp_avg_c = fnum(temp_avg_c)
+    temp_min_c = fnum(temp_min_c)
+    temp_max_c = fnum(temp_max_c)
+    try:
+        breach_count = int(breach_count) if breach_count is not None else 0
+    except Exception:
+        breach_count = 0
+
+    # Excursion penalties
+    excursion_hi = 0.0
+    excursion_lo = 0.0
+
+    if temp_max_c is not None and temp_max_c > max_allowed_c:
+        excursion_hi = temp_max_c - max_allowed_c
+    if temp_min_c is not None and temp_min_c < min_allowed_c:
+        excursion_lo = min_allowed_c - temp_min_c
+
+    # Base score
+    score = 100.0
+
+    # Penalize breaches heavily (each breach reduces score)
+    score -= breach_count * 8.0
+
+    # Penalize excursions (each degree outside range reduces score)
+    score -= excursion_hi * 12.0
+    score -= excursion_lo * 12.0
+
+    # Small penalty if average is outside allowed range
+    if temp_avg_c is not None:
+        if temp_avg_c > max_allowed_c:
+            score -= (temp_avg_c - max_allowed_c) * 6.0
+        if temp_avg_c < min_allowed_c:
+            score -= (min_allowed_c - temp_avg_c) * 6.0
+
+    # Clamp 0–100
+    score = max(0.0, min(100.0, score))
+
+    # Category
+    if score >= 90:
+        category = "Excellent"
+        rag = "Green"
+    elif score >= 75:
+        category = "Good"
+        rag = "Green"
+    elif score >= 60:
+        category = "Watch"
+        rag = "Amber"
+    else:
+        category = "Breach"
+        rag = "Red"
+
+    return {
+        "score": round(score, 1),
+        "category": category,
+        "rag": rag,
+        "inputs": {
+            "temp_avg_c": temp_avg_c,
+            "temp_min_c": temp_min_c,
+            "temp_max_c": temp_max_c,
+            "breach_count": breach_count,
+            "min_allowed_c": min_allowed_c,
+            "max_allowed_c": max_allowed_c,
+        },
+        "components": {
+            "excursion_hi": round(excursion_hi, 2),
+            "excursion_lo": round(excursion_lo, 2),
+        },
+    }
+
+
 def make_qr_payload(receipt_row: dict) -> str:
     """
     Minimal QR payload (string). Keep it short + stable.
