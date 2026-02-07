@@ -1,8 +1,14 @@
 import streamlit as st
-from utils import load_csv
-from auth import require_login
-user = require_login()
+import pandas as pd
+from pathlib import Path
 
+DATA_DIR = Path(__file__).resolve().parent / "data"
+
+def load_csv(name: str) -> pd.DataFrame:
+    path = DATA_DIR / name
+    if not path.exists():
+        return pd.DataFrame()
+    return pd.read_csv(path)
 
 def require_login():
     if "user" not in st.session_state:
@@ -11,18 +17,22 @@ def require_login():
     if st.session_state.user:
         return st.session_state.user
 
-    st.sidebar.subheader("Sign in")
-    username = st.sidebar.text_input("Username")
-    password = st.sidebar.text_input("Password", type="password")
+    st.title("Login — Mali Dairy DWR Platform")
+    st.caption("Use demo credentials to access the pilot workflow.")
 
-    if st.sidebar.button("Login", type="primary"):
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login", type="primary"):
         users = load_csv("users.csv")
-        match = users[(users["username"]==username) & (users["password"]==password)]
+        match = users[(users["username"] == username) & (users["password"] == password)]
         if match.empty:
-            st.sidebar.error("Invalid credentials")
+            st.error("Invalid credentials")
         else:
             st.session_state.user = match.iloc[0].to_dict()
-            st.sidebar.success("Signed in")
+            st.success("Signed in")
             st.rerun()
 
+    st.info("Demo password for all users: Admin123!")
     st.stop()
+
