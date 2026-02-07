@@ -24,7 +24,11 @@ receipts = load_csv("dwr_receipts.csv")
 
 c1,c2,c3,c4,c5 = st.columns(5)
 c1.metric("Owner entities", len(entities))
-c2.metric("Licensed custodians", len(custodians[custodians['license_status'].astype(str).str.contains('licensed', na=False)]))
+licensed_count = 0
+if not custodians.empty and "license_status" in custodians.columns:
+    licensed_count = int(custodians["license_status"].astype(str).str.contains("licensed", na=False).sum())
+
+c2.metric("Licensed custodians", licensed_count)
 c3.metric("Tanks", len(tanks))
 c4.metric("Active lots", len(lots[lots['status'].fillna('')=='active']))
 c5.metric("Active receipts", len(receipts[receipts['status'].fillna('')=='active']))
