@@ -1,8 +1,16 @@
-import streamlit as st
-from utils import load_csv
+import from utils import load_csv_schema
+import pandas as pd
 from auth import require_login
 user = require_login()
+custodian_schema = ["custodian_id","custodian_type","name","region","license_status","power_source","notes"]
 
+seed_custodians = pd.DataFrame([
+    ["C-MCC-001","mcc","Centre de Collecte Sikasso","Sikasso","licensed","solar+grid","Chilling available"],
+    ["C-CHILL-001","chilling_center","Chiller Koulikoro","Koulikoro","licensed","grid","Bulk tank"],
+    ["C-PROC-001","processor","Mini-Usine Bamako","Bamako","licensed","grid","Yogurt/butter processing"],
+], columns=custodian_schema)
+
+custodians = load_csv_schema("custodians.csv", custodian_schema, seed_df=seed_custodians)
 
 st.set_page_config(page_title="Mali Dairy DWR Platform", layout="wide")
 
