@@ -4,58 +4,52 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 USERS_PATH = DATA_DIR / "users.csv"
-
 REQUIRED_COLS = ["username", "password", "role", "entity_id"]
 
-DEMO_USERS = pd.DataFrame(
-    [
-        ["platform_admin", "Admin123!", "platform", "E-PLAT-001"],
-        ["women_group", "Admin123!", "owner", "E-WG-001"],
-        ["woman_processor", "Admin123!", "owner", "E-WI-001"],
-        ["private_dairy", "Admin123!", "owner", "E-COMP-001"],
-        ["custodian_mcc", "Admin123!", "custodian", "C-MCC-001"],
-        ["bank_demo", "Admin123!", "bank", "BANK-001"],
-        ["buyer_demo", "Admin123!", "buyer", "E-BUY-001"],
-        ["government", "Admin123!", "government", "GOV-REG-001"],
-    ],
-    columns=REQUIRED_COLS,
-)
-
-def _load_users() -> pd.DataFrame:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-
+def load_users() -> pd.DataFrame:
     if not USERS_PATH.exists():
-        DEMO_USERS.to_csv(USERS_PATH, index=False)
-        return DEMO_USERS.copy()
+        raise FileNotFoundError(f"Missing users file at: {USERS_PATH}")
 
-    try:
-        df = pd.read_csv(USERS_PATH)
-    except Exception:
-        DEMO_USERS.to_csv(USERS_PATH, index=False)
-        return DEMO_USERS.copy()
+    # Force correct parsing
+    df = pd.read_csv(USERS_PATH, sep=",", header=0, engine="python")
 
-    # Validate required columns
-    if df.empty or any(c not in df.columns for c in REQUIRED_COLS):
-        DEMO_USERS.to_csv(USERS_PATH, index=False)
-        return DEMO_USERS.copy()
+    # If someone saved it with header=None previously, first row becomes data
+    # Example: columns = [0,1,2,3] and first row contains 'username'
+    if list(df.columns) != REQUIRED_COLS:
+        # Try reading without header then promote first row to header if it matches
+        df2 = pd.read_csv(USERS_PATH, sep=",", header=None, engine="python")
+        first_row = df2.iloc[0].astype(str).str.strip().tolist()
+        if first_row == REQUIRED_COLS:
+            df2 = df2.iloc[1:].copy()
+            df2.columns = REQUIRED_COLS
+            df = df2
+        else:
+            raise ValueError(
+                f"users.csv headers not recognized.\n"
+                f"Read columns: {list(df.columns)}\n"
+                f"First row (if headerless): {first_row}\n"
+                f"Expected: {REQUIRED_COLS}\n"
+                f"File: {USERS_PATH}"
+            )
 
-    # Keep only required columns (avoid surprises)
-    return df[REQUIRED_COLS].copy()
+    return df
 
 def require_login():
     if "user" not in st.session_state:
         st.session_state.user = None
-
     if st.session_state.user:
         return st.session_state.user
 
     st.title("Login — Mali Dairy DWR Platform")
-    st.caption("Use demo credentials to access the pilot workflow.")
 
-    users = _load_users()
+    try:
+        users = load_users()
+    except Exception as e:
+        st.error(f"Login system error: {e}")
+        st.stop()
 
-    username = st.text_input("Username", value="")
-    password = st.text_input("Password", type="password", value="")
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
 
     if st.button("Login", type="primary"):
         match = users[(users["username"] == username) & (users["password"] == password)]
@@ -68,5 +62,6 @@ def require_login():
 
     st.info("Demo password for all users: Admin123!")
     st.stop()
+
 
 
