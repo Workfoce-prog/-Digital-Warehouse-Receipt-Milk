@@ -8,13 +8,10 @@ import pandas as pd
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 
 def csv_path(file_name: str) -> str:
     return os.path.join(BASE_DIR, file_name)
-
 
 def load_csv(file_name: str) -> pd.DataFrame:
     path = csv_path(file_name)
@@ -25,11 +22,9 @@ def load_csv(file_name: str) -> pd.DataFrame:
     except Exception:
         return pd.DataFrame()
 
-
 def save_csv(df: pd.DataFrame, file_name: str) -> None:
     path = csv_path(file_name)
     df.to_csv(path, index=False)
-
 
 def load_csv_schema(file_name, schema, seed_df=None):
     path = csv_path(file_name)
@@ -47,12 +42,10 @@ def load_csv_schema(file_name, schema, seed_df=None):
 
     return df[schema]
 
-
 def gen_id(prefix: str) -> str:
     stamp = datetime.utcnow().strftime("%Y%m%d")
     short = uuid.uuid4().hex[:6].upper()
     return f"{prefix}-{stamp}-{short}"
-
 
 def log_event(username, event_type, object_type, object_id, details=None, file_name="events.csv"):
     path = csv_path(file_name)
@@ -76,7 +69,6 @@ def log_event(username, event_type, object_type, object_id, details=None, file_n
         out = row
 
     out.to_csv(path, index=False)
-
 
 def compute_coldchain_score(temp_avg_c, temp_breach_count):
     try:
@@ -109,7 +101,6 @@ def compute_coldchain_score(temp_avg_c, temp_breach_count):
 
     return {"score": score, "status": status}
 
-
 def make_qr_payload(receipt_id, lot_id, owner_entity_id, custodian_id, issued_at=None, expiry_ts=None, status="active"):
     payload = {
         "receipt_id": receipt_id,
@@ -122,13 +113,11 @@ def make_qr_payload(receipt_id, lot_id, owner_entity_id, custodian_id, issued_at
     }
     return json.dumps(payload, ensure_ascii=False)
 
-
 def _wrap_text(text: str, width: int = 90):
     text = str(text or "")
     return [text[i:i + width] for i in range(0, len(text), width)] or [""]
 
-
-def generate_receipt_pdf(receipt_row: dict, lot_row: dict | None = None) -> bytes:
+def generate_receipt_pdf(receipt_row: dict, lot_row=None) -> bytes:
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
@@ -201,3 +190,4 @@ def generate_receipt_pdf(receipt_row: dict, lot_row: dict | None = None) -> byte
 
     buffer.seek(0)
     return buffer.read()
+
