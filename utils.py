@@ -3,6 +3,10 @@ import json
 import uuid
 import pandas as pd
 from datetime import datetime
+from io import BytesIO
+
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 
 # --------------------------------------------------
 # Base path
@@ -54,9 +58,6 @@ def load_csv_schema(file_name, schema, seed_df=None):
 # ID generator
 # --------------------------------------------------
 def gen_id(prefix: str) -> str:
-    """
-    Generate a readable unique ID like LOT-20260311-AB12CD
-    """
     stamp = datetime.utcnow().strftime("%Y%m%d")
     short = uuid.uuid4().hex[:6].upper()
     return f"{prefix}-{stamp}-{short}"
@@ -90,7 +91,7 @@ def log_event(username, event_type, object_type, object_id, details=None, file_n
     out.to_csv(path, index=False)
 
 # --------------------------------------------------
-# Optional cold-chain scoring helper
+# Cold-chain scoring helper
 # --------------------------------------------------
 def compute_coldchain_score(temp_avg_c, temp_breach_count):
     try:
@@ -122,3 +123,104 @@ def compute_coldchain_score(temp_avg_c, temp_breach_count):
         status = "Red"
 
     return {"score": score, "status": status}
+
+# --------------------------------------------------
+# QR payload for DWR / BDN
+# --------------------------------------------------
+def make_qr_payload(receipt_id, lot_id, owner_entity_id, custodian_id, issued_at=None, expiry_ts=None, status="active"):
+    payload = {
+        "receipt_id": receipt_id,
+        "lot_id": lot_id,
+        "owner_entity_id": owner_entity_id,
+        "custodian_id": custodian_id,
+        "issued_at": issued_at or datetime.utcnow().isoformat(),
+        "expiry_ts": expiry_ts,
+        "status": status,
+    }
+    return json.dumps(payload, ensure_ascii=False)
+
+# --------------------------------------------------
+# Receipt PDF generator
+# --------------------------------------------------
+def generate_receipt_pdf(receipt_row: dict, lot_row: dict | None = None) -> bytes:
+    """
+    Returns PDF bytes for download.
+    """
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    y = height - 50
+
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(50, y, "Mali Dairy Digital Warehouse Receipt (DWR / BDN)")
+    y -= 30
+
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(50, y, f"Issued at: {receipt_row.get('issued_at', '')}")
+    y -= 20
+    pdf.drawString(50, y, f"Receipt ID: {receipt_row.get('receipt_id', '')}")
+    y -= 20
+    pdf.drawString(50, y, f"Lot ID: {receipt_row.get('lot_id', '')}")
+    y -= 20
+    pdf.drawString(50, y, f"Owner Entity: {receipt_row.get('owner_entity_id', '')}")
+    y -= 20
+    pdf.drawString(50, y, f"Custodian: {receipt_row.get('custodian_id', '')}")
+    y -= 20
+    pdf.drawString(50, y, f"Status: {receipt_row.get('status', '')}")
+    y -= 20
+    pdf.drawString(50, y, f"Expiry: {receipt_row.get('expiry_ts', '')}")
+    y -= 30
+
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawString(50, y, "QR Payload")
+    y -= 20
+
+    pdf.setFont("Helvetica", 9)
+    qr_payload = str(receipt_row.get("qr_payload", ""))
+    for line in _wrap_text(qr_payload, 90):
+        pdf.drawString(50, y, line)
+        y -= 14
+        if y < 80:
+            pdf.showPage()
+            pdf.setFont("Helvetica", 9)
+            y = height - 50
+
+    if lot_row:
+        y -= 20
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(50, y, "Lot Details")
+        y -= 20
+
+        pdf.setFont("Helvetica", 10)
+        fields = [
+            ("Product Type", lot_row.get("product_type", "")),
+            ("Quantity Liters", lot_row.get("quantity_liters", "")),
+            ("Fat %", lot_row.get("fat_pct", "")),
+            ("SNF %", lot_row.get("snf_pct", "")),
+            ("Acidity", lot_row.get("acidity", "")),
+            ("Antibiotic Test", lot_row.get("antibiotic_test", "")),
+            ("Bacterial Score", lot_row.get("bacterial_score", "")),
+            ("Avg Temp C", lot_row.get("temp_avg_c", "")),
+            ("Quality Grade", lot_row.get("quality_grade", "")),
+            ("Lot Status", lot_row.get("status", "")),
+        ]
+
+        for label, value in fields:
+            pdf.drawString(50, y, f"{label}: {value}")
+            y -= 18
+            if y < 80:
+                pdf.showPage()
+                pdf.setFont("Helvetica", 10)
+                y = height - 50
+
+    pdf.showPage()
+    pdf.save()
+
+    buffer.seek(0)
+    return buffer.read()
+
+def _wrap_text(text: str, width: int = 90):
+    if not text:
+        return [""]
+    return [text[i:i + width] for i in range(0, len(text), width)]
