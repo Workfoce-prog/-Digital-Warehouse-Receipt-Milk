@@ -1,23 +1,20 @@
 import os
 import json
 import uuid
-import pandas as pd
-from datetime import datetime
 from io import BytesIO
+from datetime import datetime
 
+import pandas as pd
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
-# --------------------------------------------------
-# Base path
-# --------------------------------------------------
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# --------------------------------------------------
-# Generic CSV helpers
-# --------------------------------------------------
+
 def csv_path(file_name: str) -> str:
     return os.path.join(BASE_DIR, file_name)
+
 
 def load_csv(file_name: str) -> pd.DataFrame:
     path = csv_path(file_name)
@@ -28,21 +25,17 @@ def load_csv(file_name: str) -> pd.DataFrame:
     except Exception:
         return pd.DataFrame()
 
+
 def save_csv(df: pd.DataFrame, file_name: str) -> None:
     path = csv_path(file_name)
     df.to_csv(path, index=False)
 
-# --------------------------------------------------
-# Schema-aware CSV loader
-# --------------------------------------------------
+
 def load_csv_schema(file_name, schema, seed_df=None):
     path = csv_path(file_name)
 
     if not os.path.exists(path):
-        if seed_df is None:
-            df = pd.DataFrame(columns=schema)
-        else:
-            df = seed_df.copy()
+        df = seed_df.copy() if seed_df is not None else pd.DataFrame(columns=schema)
         df.to_csv(path, index=False)
         return df
 
@@ -54,21 +47,15 @@ def load_csv_schema(file_name, schema, seed_df=None):
 
     return df[schema]
 
-# --------------------------------------------------
-# ID generator
-# --------------------------------------------------
+
 def gen_id(prefix: str) -> str:
     stamp = datetime.utcnow().strftime("%Y%m%d")
     short = uuid.uuid4().hex[:6].upper()
     return f"{prefix}-{stamp}-{short}"
 
-# --------------------------------------------------
-# Event logging
-# --------------------------------------------------
+
 def log_event(username, event_type, object_type, object_id, details=None, file_name="events.csv"):
     path = csv_path(file_name)
-
-    details_json = json.dumps(details or {}, ensure_ascii=False)
 
     row = pd.DataFrame([{
         "event_ts": datetime.utcnow().isoformat(),
@@ -76,7 +63,7 @@ def log_event(username, event_type, object_type, object_id, details=None, file_n
         "event_type": event_type,
         "object_type": object_type,
         "object_id": object_id,
-        "details_json": details_json,
+        "details_json": json.dumps(details or {}, ensure_ascii=False),
     }])
 
     if os.path.exists(path):
@@ -90,9 +77,7 @@ def log_event(username, event_type, object_type, object_id, details=None, file_n
 
     out.to_csv(path, index=False)
 
-# --------------------------------------------------
-# Cold-chain scoring helper
-# --------------------------------------------------
+
 def compute_coldchain_score(temp_avg_c, temp_breach_count):
     try:
         temp_avg_c = float(temp_avg_c)
@@ -124,9 +109,7 @@ def compute_coldchain_score(temp_avg_c, temp_breach_count):
 
     return {"score": score, "status": status}
 
-# --------------------------------------------------
-# QR payload for DWR / BDN
-# --------------------------------------------------
+
 def make_qr_payload(receipt_id, lot_id, owner_entity_id, custodian_id, issued_at=None, expiry_ts=None, status="active"):
     payload = {
         "receipt_id": receipt_id,
@@ -139,13 +122,13 @@ def make_qr_payload(receipt_id, lot_id, owner_entity_id, custodian_id, issued_at
     }
     return json.dumps(payload, ensure_ascii=False)
 
-# --------------------------------------------------
-# Receipt PDF generator
-# --------------------------------------------------
+
+def _wrap_text(text: str, width: int = 90):
+    text = str(text or "")
+    return [text[i:i + width] for i in range(0, len(text), width)] or [""]
+
+
 def generate_receipt_pdf(receipt_row: dict, lot_row: dict | None = None) -> bytes:
-    """
-    Returns PDF bytes for download.
-    """
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
@@ -174,11 +157,10 @@ def generate_receipt_pdf(receipt_row: dict, lot_row: dict | None = None) -> byte
 
     pdf.setFont("Helvetica-Bold", 12)
     pdf.drawString(50, y, "QR Payload")
-    y -= 20
+    y -= 18
 
     pdf.setFont("Helvetica", 9)
-    qr_payload = str(receipt_row.get("qr_payload", ""))
-    for line in _wrap_text(qr_payload, 90):
+    for line in _wrap_text(receipt_row.get("qr_payload", ""), 90):
         pdf.drawString(50, y, line)
         y -= 14
         if y < 80:
@@ -190,7 +172,7 @@ def generate_receipt_pdf(receipt_row: dict, lot_row: dict | None = None) -> byte
         y -= 20
         pdf.setFont("Helvetica-Bold", 12)
         pdf.drawString(50, y, "Lot Details")
-        y -= 20
+        y -= 18
 
         pdf.setFont("Helvetica", 10)
         fields = [
@@ -219,8 +201,3 @@ def generate_receipt_pdf(receipt_row: dict, lot_row: dict | None = None) -> byte
 
     buffer.seek(0)
     return buffer.read()
-
-def _wrap_text(text: str, width: int = 90):
-    if not text:
-        return [""]
-    return [text[i:i + width] for i in range(0, len(text), width)]
