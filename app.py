@@ -1,8 +1,12 @@
-import streamlit as st
-from auth import require_login
-from utils import load_csv_schema
-import pandas as pd
-
+streamlit==1.55.0
+uvicorn==0.35.0
+pandas
+numpy
+sqlalchemy
+psycopg2-binary
+requests
+reportlab
+pyarrow
 # ----------------------------
 # Page config MUST be first
 # ----------------------------
