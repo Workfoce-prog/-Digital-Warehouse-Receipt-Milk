@@ -1,6 +1,9 @@
-streamlit>=1.32
-pandas>=2.0
-numpy>=1.26
-reportlab>=4.0
-qrcode>=7.4.2
-Pillow>=10.0
+streamlit==1.55.0
+uvicorn
+pandas
+numpy
+sqlalchemy
+psycopg2-binary
+requests
+reportlab
+pyarrow
