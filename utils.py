@@ -2,6 +2,16 @@ import os
 import json
 import pandas as pd
 from datetime import datetime
+import uuid
+
+
+def gen_id(prefix: str) -> str:
+    """
+    Generate a readable unique ID like LOT-20260311-AB12CD
+    """
+    stamp = datetime.utcnow().strftime("%Y%m%d")
+    short = uuid.uuid4().hex[:6].upper()
+    return f"{prefix}-{stamp}-{short}"
 
 # --------------------------------------------------
 # Base path
